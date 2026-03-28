@@ -1,0 +1,5 @@
+
+# Cache directories
+cache/
+cache_data/
+*.cache
