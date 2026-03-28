@@ -4,6 +4,7 @@ import (
     "fmt"
 
     "github.com/Pavel90544/VSRPP/lab5/internal/domain/models"
+    "github.com/Pavel90544/VSRPP/lab5/pkg/config"
 )
 
 type Logger interface {
@@ -17,21 +18,29 @@ type WeatherInfo interface {
 }
 
 type cliApp struct {
-    l  Logger
-    wi WeatherInfo
+    l      Logger
+    wi     WeatherInfo
+    config config.Config
 }
 
-func New(l Logger, wi WeatherInfo) *cliApp {
+func New(l Logger, wi WeatherInfo, cfg config.Config) *cliApp {
     return &cliApp{
-        l:  l,
-        wi: wi,
+        l:      l,
+        wi:     wi,
+        config: cfg,
     }
 }
 
 func (c *cliApp) Run() error {
+    // Используем координаты из конфига
+    lat := c.config.L.Lat
+    lon := c.config.L.Long
+    
+    c.l.Debug(fmt.Sprintf("Using coordinates: lat=%.4f, lon=%.4f", lat, lon))
+    
     fmt.Printf(
         "Температура воздуха - %.2f градусов цельсия\n",
-        c.wi.GetTemperature(53.6688, 23.8223).Temp,
+        c.wi.GetTemperature(lat, lon).Temp,
     )
     return nil
 }

@@ -4,10 +4,10 @@ run:
 	go run ./cmd/linux/cli/main.go
 
 run-debug:
-	go run ./cmd/linux/cli/main.go -debug=true
+	go run ./cmd/linux/cli/main.go -config ./config/config.yaml
 
 run-minsk:
-	go run ./cmd/linux/cli/main.go -lat=53.9045 -lon=27.5615
+	go run ./cmd/linux/cli/main.go -config ./config/config_minsk.yaml
 
 build:
 	go build -o ./build/weather_app ./cmd/linux/cli/main.go
