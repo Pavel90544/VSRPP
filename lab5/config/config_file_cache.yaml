@@ -5,6 +5,6 @@ service:
     lat: 53.6688
     long: 23.8223
   cache:
-    type: memory
-    ttl: 300
-    dir: ./cache
+    type: file
+    ttl: 600
+    dir: ./cache_data

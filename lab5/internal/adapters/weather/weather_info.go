@@ -1,92 +1,95 @@
 package weather
 
 import (
-    "encoding/json"
-    "errors"
-    "fmt"
-    "io"
-    "net/http"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
 
-    "github.com/Pavel90544/VSRPP/lab5/internal/domain/models"
+	"github.com/Pavel90544/VSRPP/lab5/internal/domain/models"
 )
 
 const apiURL = "https://api.open-meteo.com/v1/forecast"
 
 type current struct {
-    Temp float32 `json:"temperature_2m"`
+	Temp float32 `json:"temperature_2m"`
 }
 
 type response struct {
-    Curr current `json:"current"`
+	Curr current `json:"current"`
 }
 
 type Logger interface {
-    Info(string)
-    Debug(string)
-    Error(string, error)
+	Info(string)
+	Debug(string)
+	Error(string, error)
 }
 
 type weatherInfo struct {
-    c        current
-    l        Logger
-    isLoaded bool
+	c        current
+	l        Logger
+	isLoaded bool
+}
+type WeatherInfo interface {
+	GetTemperature(float64, float64) models.TempInfo
 }
 
 func New(l Logger) *weatherInfo {
-    return &weatherInfo{
-        l: l,
-    }
+	return &weatherInfo{
+		l: l,
+	}
 }
 
 func (wi *weatherInfo) getWeatherInfo(lat, long float64) error {
-    var respData response
+	var respData response
 
-    params := fmt.Sprintf(
-        "latitude=%f&longitude=%f&current=temperature_2m",
-        lat,
-        long,
-    )
-    url := fmt.Sprintf("%s?%s", apiURL, params)
+	params := fmt.Sprintf(
+		"latitude=%f&longitude=%f&current=temperature_2m",
+		lat,
+		long,
+	)
+	url := fmt.Sprintf("%s?%s", apiURL, params)
 
-    wi.l.Debug(fmt.Sprintf("url was generated success - %s", url))
+	wi.l.Debug(fmt.Sprintf("url was generated success - %s", url))
 
-    resp, err := http.Get(url)
-    if err != nil {
-        wi.l.Error("can't get weather data", err)
-        customErr := errors.New("can't get weather data from openmeteo")
-        return errors.Join(customErr, err)
-    }
-    defer func() {
-        if err := resp.Body.Close(); err != nil {
-            wi.l.Error("can't close body", err)
-        }
-    }()
+	resp, err := http.Get(url)
+	if err != nil {
+		wi.l.Error("can't get weather data", err)
+		customErr := errors.New("can't get weather data from openmeteo")
+		return errors.Join(customErr, err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			wi.l.Error("can't close body", err)
+		}
+	}()
 
-    data, err := io.ReadAll(resp.Body)
-    if err != nil {
-        wi.l.Error("can't read data from body", err)
-        customErr := errors.New("can't read data from response")
-        return errors.Join(customErr, err)
-    }
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		wi.l.Error("can't read data from body", err)
+		customErr := errors.New("can't read data from response")
+		return errors.Join(customErr, err)
+	}
 
-    wi.l.Debug(fmt.Sprintf("data was readed successfuly size - %d", len(data)))
+	wi.l.Debug(fmt.Sprintf("data was readed successfuly size - %d", len(data)))
 
-    if err := json.Unmarshal(data, &respData); err != nil {
-        wi.l.Error("can't unmarshal json data", err)
-        customErr := errors.New("can't unmarshal data from response")
-        return errors.Join(customErr, err)
-    }
+	if err := json.Unmarshal(data, &respData); err != nil {
+		wi.l.Error("can't unmarshal json data", err)
+		customErr := errors.New("can't unmarshal data from response")
+		return errors.Join(customErr, err)
+	}
 
-    wi.c = respData.Curr
-    wi.isLoaded = true
-    return nil
+	wi.c = respData.Curr
+	wi.isLoaded = true
+	return nil
 }
 
 func (wi *weatherInfo) GetTemperature(lat, long float64) models.TempInfo {
-    if !wi.isLoaded {
-        wi.getWeatherInfo(lat, long)
-    }
-    return models.TempInfo{
-        Temp: wi.c.Temp,
-    }
+	if !wi.isLoaded {
+		wi.getWeatherInfo(lat, long)
+	}
+	return models.TempInfo{
+		Temp: wi.c.Temp,
+	}
 }
