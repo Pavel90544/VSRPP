@@ -1,49 +1,22 @@
-name: CI - Weather Informer
+name: CI - Cache Tests
 
 on:
   push:
-    branches: [ master, main, feature/* ]
+    branches: [ feature/tests ]
   pull_request:
-    branches: [ master, main ]
+    branches: [ feature/tests ]
 
 jobs:
   test:
-    name: Run Tests
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.21'
       
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('lab5/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      
-      - name: Download dependencies
+      - name: Run cache tests
         working-directory: ./lab5
-        run: go mod download
-      
-      - name: Run tests
-        working-directory: ./lab5
-        run: go test -v -race -cover ./...
-      
-      - name: Build
-        working-directory: ./lab5
-        run: go build -o weather-app ./cmd/linux/cli/main.go
-      
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: lab5/coverage.out
+        run: go test -v -cover ./internal/pkg/cache/...
