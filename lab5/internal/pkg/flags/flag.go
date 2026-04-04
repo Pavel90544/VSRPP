@@ -1,21 +1,25 @@
 package flags
 
-import "flag"
+import (
+    "flag"
+    "os"
+)
 
 type Flags struct {
-    Path string // путь к конфигурационному файлу
+    Path string
 }
 
 // Parse - парсит аргументы командной строки
 func Parse() *Flags {
-    // Определяем флаг -config с значением по умолчанию
-    configPath := flag.String("config", "./config/config.yaml", "path to config file")
+    // Создаем новый набор флагов для каждого вызова
+    flagSet := flag.NewFlagSet("weather-app", flag.ContinueOnError)
+    
+    configPath := flagSet.String("config", "./config/config.yaml", "path to config file")
     
     // Парсим аргументы
-    flag.Parse()
+    flagSet.Parse(os.Args[1:])
     
-    // Возвращаем структуру с путем к конфигу
     return &Flags{
-        Path: *configPath, // разименовываем указатель
+        Path: *configPath,
     }
 }
