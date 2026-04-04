@@ -14,33 +14,33 @@ type Logger interface {
 }
 
 type WeatherInfo interface {
-    GetTemperature(float64, float64) models.TempInfo
+    GetTemperature(float64, float64) (models.TempInfo, error)
 }
 
 type cliApp struct {
-    l      Logger
-    wi     WeatherInfo
-    config config.Config
+    l    Logger
+    wi   WeatherInfo
+    conf config.Config
 }
 
-func New(l Logger, wi WeatherInfo, cfg config.Config) *cliApp {
+func New(l Logger, wi WeatherInfo, c config.Config) *cliApp {
     return &cliApp{
-        l:      l,
-        wi:     wi,
-        config: cfg,
+        l:    l,
+        wi:   wi,
+        conf: c,
     }
 }
 
 func (c *cliApp) Run() error {
-    // Используем координаты из конфига
-    lat := c.config.L.Lat
-    lon := c.config.L.Long
-    
-    c.l.Debug(fmt.Sprintf("Using coordinates: lat=%.4f, lon=%.4f", lat, lon))
-    
+    tempInfo, err := c.wi.GetTemperature(c.conf.L.Lat, c.conf.L.Long)
+    if err != nil {
+        c.l.Error("can't get temp info", err)
+        return err
+    }
+
     fmt.Printf(
         "Температура воздуха - %.2f градусов цельсия\n",
-        c.wi.GetTemperature(lat, lon).Temp,
+        tempInfo.Temp,
     )
     return nil
 }
