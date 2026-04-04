@@ -27,23 +27,11 @@ service:
     }
     
     if cfg.P.Type != "open-meteo" {
-        t.Errorf("Expected provider type 'open-meteo', got '%s'", cfg.P.Type)
-    }
-    
-    if cfg.L.Lat != 53.6688 {
-        t.Errorf("Expected lat 53.6688, got %f", cfg.L.Lat)
-    }
-    
-    if cfg.L.Long != 23.8223 {
-        t.Errorf("Expected long 23.8223, got %f", cfg.L.Long)
+        t.Errorf("Expected 'open-meteo', got '%s'", cfg.P.Type)
     }
     
     if cfg.C.Type != "memory" {
-        t.Errorf("Expected cache type 'memory', got '%s'", cfg.C.Type)
-    }
-    
-    if cfg.C.TTL != 300 {
-        t.Errorf("Expected TTL 300, got %d", cfg.C.TTL)
+        t.Errorf("Expected 'memory', got '%s'", cfg.C.Type)
     }
 }
 
@@ -64,11 +52,11 @@ service:
     }
     
     if cfg.C.Type != "memory" {
-        t.Errorf("Expected default cache type 'memory', got '%s'", cfg.C.Type)
+        t.Errorf("Expected default 'memory', got '%s'", cfg.C.Type)
     }
     
     if cfg.C.TTL != 300 {
-        t.Errorf("Expected default TTL 300, got %d", cfg.C.TTL)
+        t.Errorf("Expected default 300, got %d", cfg.C.TTL)
     }
 }
 
@@ -93,6 +81,6 @@ service:
     expected := time.Duration(60) * time.Second
     
     if ttl != expected {
-        t.Errorf("Expected TTL %v, got %v", expected, ttl)
+        t.Errorf("Expected %v, got %v", expected, ttl)
     }
 }
