@@ -14,3 +14,19 @@ build:
 
 clean:
 	rm -rf ./build/*
+
+# CI/CD commands
+ci-test:
+	go test -v -race -cover ./...
+
+ci-lint:
+	golangci-lint run
+
+ci-build:
+	go build -o /dev/null ./cmd/linux/cli/main.go
+
+ci-all: ci-lint ci-test ci-build
+
+ci-coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
