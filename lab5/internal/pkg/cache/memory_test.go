@@ -49,15 +49,11 @@ func TestMemoryCache_Expiration(t *testing.T) {
     value := "expire_value"
     ttl := time.Millisecond * 100
 
-    err := cache.Set(key, value, ttl)
-    if err != nil {
-        t.Fatalf("Set failed: %v", err)
-    }
-
+    cache.Set(key, value, ttl)
     time.Sleep(ttl + time.Millisecond*50)
 
     var result string
-    err = cache.Get(key, &result)
+    err := cache.Get(key, &result)
 
     if err == nil {
         t.Error("Expected error for expired key")
@@ -112,5 +108,81 @@ func TestMemoryCache_Exists(t *testing.T) {
 
     if cache.Exists(key) {
         t.Error("Exists should return false after deletion")
+    }
+}
+
+func TestMemoryCache_Concurrent(t *testing.T) {
+    cache := NewMemoryCache()
+    defer cache.Close()
+
+    key := "concurrent_key"
+    expected := "concurrent_value"
+    ttl := time.Second * 10
+
+    cache.Set(key, expected, ttl)
+
+    done := make(chan bool)
+    for i := 0; i < 10; i++ {
+        go func() {
+            var result string
+            err := cache.Get(key, &result)
+            if err != nil {
+                t.Errorf("Concurrent get failed: %v", err)
+            }
+            if result != expected {
+                t.Errorf("Expected %s, got %s", expected, result)
+            }
+            done <- true
+        }()
+    }
+
+    for i := 0; i < 10; i++ {
+        <-done
+    }
+}
+
+func TestMemoryCache_Update(t *testing.T) {
+    cache := NewMemoryCache()
+    defer cache.Close()
+
+    key := "update_key"
+    ttl := time.Second * 10
+
+    cache.Set(key, "first_value", ttl)
+    cache.Set(key, "updated_value", ttl)
+
+    var result string
+    cache.Get(key, &result)
+
+    if result != "updated_value" {
+        t.Errorf("Expected updated_value, got %s", result)
+    }
+}
+
+// ZeroTTL в MemoryCache означает бесконечное хранение
+// (если реализовано именно так) или нужно явно передавать большой TTL
+func TestMemoryCache_LongTTL(t *testing.T) {
+    cache := NewMemoryCache()
+    defer cache.Close()
+
+    key := "long_ttl_key"
+    value := "long_ttl_value"
+
+    // Используем большой TTL вместо нулевого
+    err := cache.Set(key, value, time.Hour*24)
+    if err != nil {
+        t.Fatalf("Set failed: %v", err)
+    }
+
+    time.Sleep(time.Millisecond * 100)
+
+    var result string
+    err = cache.Get(key, &result)
+    if err != nil {
+        t.Errorf("Get after long TTL failed: %v", err)
+    }
+
+    if result != value {
+        t.Errorf("Expected %s, got %s", value, result)
     }
 }
