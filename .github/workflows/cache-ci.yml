@@ -1,0 +1,185 @@
+name: Cache CI
+
+on:
+  push:
+    branches: [ main, feature/redis-cache ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-memory:
+    name: Memory Cache Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('lab5/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      
+      - name: Download dependencies
+        working-directory: ./lab5
+        run: go mod download
+      
+      - name: Run Memory Cache tests
+        working-directory: ./lab5
+        run: go test -v -run TestMemory ./internal/pkg/cache/...
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-cache-coverage
+          path: lab5/coverage.out
+
+  test-redis:
+    name: Redis Cache Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('lab5/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      
+      - name: Download dependencies
+        working-directory: ./lab5
+        run: go mod download
+      
+      - name: Run Redis Cache tests
+        working-directory: ./lab5
+        run: go test -v -run TestRedis ./internal/pkg/cache/...
+        env:
+          REDIS_ADDR: localhost:6379
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: redis-cache-coverage
+          path: lab5/coverage.out
+
+  test-all:
+    name: All Cache Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('lab5/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      
+      - name: Download dependencies
+        working-directory: ./lab5
+        run: go mod download
+      
+      - name: Run all cache tests
+        working-directory: ./lab5
+        run: |
+          go test -v -coverprofile=coverage.out ./internal/pkg/cache/...
+          go tool cover -func=coverage.out
+        env:
+          REDIS_ADDR: localhost:6379
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-cache-coverage
+          path: lab5/coverage.out
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: lab5/coverage.html
+
+  benchmark:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    needs: [test-memory, test-redis]
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
+      - name: Run benchmarks
+        working-directory: ./lab5
+        run: go test -bench=. ./internal/pkg/cache/...
+        env:
+          REDIS_ADDR: localhost:6379
+      
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: lab5/benchmark.txt
