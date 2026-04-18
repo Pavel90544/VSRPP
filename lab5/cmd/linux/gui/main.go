@@ -3,8 +3,9 @@ package main
 import (
     "os"
 
-    "github.com/Pavel90544/VSRPP/lab5/internal/pkg/app/cli"
+    "github.com/Pavel90544/VSRPP/lab5/internal/pkg/app/gui"
     "github.com/Pavel90544/VSRPP/lab5/internal/pkg/flags"
+    "github.com/Pavel90544/VSRPP/lab5/internal/pkg/gui/fyne"
     "github.com/Pavel90544/VSRPP/lab5/internal/pkg/providers"
     "github.com/Pavel90544/VSRPP/lab5/pkg/config"
     "github.com/Pavel90544/VSRPP/lab5/pkg/logger"
@@ -25,14 +26,13 @@ func main() {
     }
 
     l := logger.New()
-    wi := providers.GetProvider(cfg, l)
-    app := cli.New(l, wi, cfg)
-
-    err = app.Run()
+    provider := providers.GetProvider(cfg, l)
+    
+    p := fyne.NewP()
+    g := gui.New(l, p, provider, cfg)
+    
+    err = g.Run()
     if err != nil {
-        l.Error("Some error", err)
-        os.Exit(1)
+        panic(err)
     }
-
-    os.Exit(0)
 }
